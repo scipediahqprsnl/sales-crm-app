@@ -6,3 +6,4 @@ uploads/*
 crm.db
 *.log
 .DS_Store
+
