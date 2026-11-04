@@ -94,6 +94,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    if (user.is_active === false || user.is_active === 0) {
+      return res.status(403).json({ error: 'This employee account has been deactivated. Please contact your administrator.' });
+    }
+
     const token = jwt.sign(
       {
         id: user.id,
@@ -171,17 +175,64 @@ router.get('/users', authenticateToken, requireRole(['ADMIN', 'BUSINESS_MANAGER'
   try {
     let users;
     if (req.user.role === 'ADMIN') {
-      users = await query(`SELECT id, name, email, role, phone, manager_id, created_at FROM users ORDER BY created_at DESC`);
+      users = await query(`SELECT id, name, email, role, phone, manager_id, is_active, created_at FROM users ORDER BY created_at DESC`);
     } else {
       // Manager can view themselves and reps assigned to them
       users = await query(
-        `SELECT id, name, email, role, phone, manager_id, created_at FROM users WHERE manager_id = ? OR id = ?`,
+        `SELECT id, name, email, role, phone, manager_id, is_active, created_at FROM users WHERE manager_id = ? OR id = ?`,
         [req.user.id, req.user.id]
       );
     }
     res.json({ users });
   } catch (error) {
     res.status(500).json({ error: 'Server error fetching users' });
+  }
+});
+
+// Admin-only employee deactivation / soft-delete:
+// Revokes login immediately but 100% PRESERVES past attendance, reports, and GPS timeline data!
+router.delete('/users/:id', authenticateToken, requireRole(['ADMIN']), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent admin from deleting themselves
+    if (req.user.id === id) {
+      return res.status(400).json({ error: 'You cannot delete your own admin account' });
+    }
+
+    const targetUser = await get(`SELECT id, name, email, role FROM users WHERE id = ?`, [id]);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Unlink any subordinates who reported to this manager
+    await run(`UPDATE users SET manager_id = NULL WHERE manager_id = ?`, [id]);
+
+    // Soft-delete: Disable login & mark inactive, DO NOT delete past work logs or attendance records!
+    await run(`UPDATE users SET is_active = false WHERE id = ?`, [id]);
+
+    res.json({ 
+      message: `Employee "${targetUser.name}" has been removed. Login is disabled, but all past work logs and attendance records are permanently preserved.` 
+    });
+  } catch (error) {
+    console.error('Deactivate employee error:', error);
+    res.status(500).json({ error: error.message || 'Server error deactivating employee' });
+  }
+});
+
+// Admin-only employee reactivation
+router.patch('/users/:id/reactivate', authenticateToken, requireRole(['ADMIN']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const targetUser = await get(`SELECT id, name FROM users WHERE id = ?`, [id]);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    await run(`UPDATE users SET is_active = true WHERE id = ?`, [id]);
+    res.json({ message: `Employee "${targetUser.name}" reactivated successfully` });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error reactivating employee' });
   }
 });
 

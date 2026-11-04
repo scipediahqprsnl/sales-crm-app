@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Shield, Phone, Mail, Check, AlertCircle } from 'lucide-react';
-import { api } from '../api';
+import { Users, UserPlus, Shield, Phone, Mail, Check, AlertCircle, Trash2 } from 'lucide-react';
+import { api, getCurrentUser } from '../api';
 
 export default function TeamManagement() {
+  const currentUser = getCurrentUser();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -54,6 +56,41 @@ export default function TeamManagement() {
     }
   };
 
+  const handleDeleteUser = async (user) => {
+    if (user.id === currentUser?.id) {
+      alert('You cannot deactivate your own logged-in admin account.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to remove/deactivate "${user.name}" (${user.email})?\n\n• Their app login will be revoked immediately.\n• All their past work logs, attendance photos, and GPS routes will remain 100% PERMANENTLY preserved.`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingId(user.id);
+    try {
+      await api.deleteUser(user.id);
+      await fetchUsers();
+    } catch (err) {
+      alert(err.message || 'Failed to deactivate employee');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleReactivateUser = async (user) => {
+    setDeletingId(user.id);
+    try {
+      await api.reactivateUser(user.id);
+      await fetchUsers();
+    } catch (err) {
+      alert(err.message || 'Failed to reactivate employee');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Top Header */}
@@ -84,12 +121,13 @@ export default function TeamManagement() {
               <th>Role</th>
               <th>Phone</th>
               <th>Account Created</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                   Loading staff accounts...
                 </td>
               </tr>
@@ -102,10 +140,19 @@ export default function TeamManagement() {
                   roleBadge = <span className="badge badge-info">Manager</span>;
                 }
 
+                const isInactive = user.is_active === false;
+
                 return (
-                  <tr key={user.id}>
+                  <tr key={user.id} style={{ opacity: isInactive ? 0.65 : 1 }}>
                     <td>
-                      <div style={{ fontWeight: 700 }}>{user.name}</div>
+                      <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>{user.name}</span>
+                        {isInactive && (
+                          <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: '#f1f5f9', color: '#64748b', fontWeight: 600 }}>
+                            Inactive
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
@@ -122,6 +169,59 @@ export default function TeamManagement() {
                     </td>
                     <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                       {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      {user.id === currentUser?.id ? (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          (Current Account)
+                        </span>
+                      ) : isInactive ? (
+                        <button
+                          onClick={() => handleReactivateUser(user)}
+                          disabled={deletingId === user.id}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            border: '1px solid #bbf7d0',
+                            background: '#f0fdf4',
+                            color: '#16a34a',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: deletingId === user.id ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            transition: 'all 0.15s ease'
+                          }}
+                          title={`Reactivate ${user.name}`}
+                        >
+                          <Check size={13} />
+                          <span>{deletingId === user.id ? 'Activating...' : 'Reactivate'}</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteUser(user)}
+                          disabled={deletingId === user.id}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            border: '1px solid #fecaca',
+                            background: '#fff1f2',
+                            color: '#e11d48',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: deletingId === user.id ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            transition: 'all 0.15s ease'
+                          }}
+                          title={`Remove ${user.name} (preserves past history)`}
+                        >
+                          <Trash2 size={13} />
+                          <span>{deletingId === user.id ? 'Removing...' : 'Remove'}</span>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

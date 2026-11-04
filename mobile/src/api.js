@@ -1,29 +1,9 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Cloud Production Server URL on Render (accessible anywhere via 4G/5G mobile data or Wi-Fi)
+// Fixed Production Cloud Server URL on Render
 export const CLOUD_SERVER_URL = 'https://sales-crm-app-1kqz.onrender.com';
-export const CLOUD_API_BASE = `${CLOUD_SERVER_URL}/api`;
-
-export let API_BASE = CLOUD_API_BASE;
-
-// Check if custom server host was saved in storage, upgrade old localhost/LAN to cloud
-AsyncStorage.getItem('sales_crm_server_url')
-  .then((saved) => {
-    if (saved && saved.startsWith('http') && !saved.includes('localhost') && !saved.includes('192.168.') && !saved.includes('10.0.2.2')) {
-      API_BASE = saved;
-    } else {
-      // Default to production cloud Render server
-      API_BASE = CLOUD_API_BASE;
-      AsyncStorage.setItem('sales_crm_server_url', CLOUD_API_BASE);
-    }
-  })
-  .catch(() => {});
-
-export const setServerUrl = async (url) => {
-  API_BASE = url;
-  await AsyncStorage.setItem('sales_crm_server_url', url);
-};
+export const API_BASE = `${CLOUD_SERVER_URL}/api`;
 
 export const getAuthToken = async () => {
   return await AsyncStorage.getItem('sales_crm_token');

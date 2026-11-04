@@ -50,6 +50,12 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(userData),
   }),
+  deleteUser: (userId) => request(`/auth/users/${userId}`, {
+    method: 'DELETE',
+  }),
+  reactivateUser: (userId) => request(`/auth/users/${userId}/reactivate`, {
+    method: 'PATCH',
+  }),
 
   // Attendance
   getTodayAttendance: () => request('/attendance/today'),

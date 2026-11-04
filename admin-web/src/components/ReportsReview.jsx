@@ -105,9 +105,6 @@ export default function ReportsReview() {
             <h2 style={{ fontSize: 20, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 10 }}>
               <FileText size={22} color="#818cf8" />
               <span>Work Activity & Client Visit Logs</span>
-              <span className="badge badge-success" style={{ fontSize: 11, padding: '3px 8px' }}>
-                Directly Synchronized (No Approval Required)
-              </span>
             </h2>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
               All client visit logs and discussion notes submitted by team members appear here immediately.
@@ -202,22 +199,23 @@ export default function ReportsReview() {
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: '22%' }}>Name of Employee</th>
-              <th style={{ width: '23%' }}>Name of Organization</th>
-              <th style={{ width: '20%' }}>Meeting Purpose</th>
-              <th style={{ width: '35%' }}>Added Note</th>
+              <th style={{ width: '20%' }}>Name of Employee</th>
+              <th style={{ width: '22%' }}>Name of Organization</th>
+              <th style={{ width: '16%' }}>Scheme</th>
+              <th style={{ width: '16%' }}>Meeting Purpose</th>
+              <th style={{ width: '26%' }}>Added Note</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
                   Loading activity logs...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
                   <FileText size={32} color="#6b7280" style={{ margin: '0 auto 10px' }} />
                   <div style={{ fontWeight: 600, fontSize: 15 }}>No Work Logs Found</div>
                   <div style={{ fontSize: 12, marginTop: 4 }}>
@@ -277,34 +275,36 @@ export default function ReportsReview() {
                       </div>
                     </td>
 
-                    {/* 3rd Column: Meeting Purpose */}
+                    {/* 3rd Column: Scheme */}
                     <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-                        <span className="badge badge-info" style={{ fontSize: 11, fontWeight: 700 }}>
-                          {report.meeting_type || 'General Visit'}
+                      {report.scheme ? (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          background: '#f5f3ff',
+                          color: '#7c3aed',
+                          border: '1px solid #ddd6fe',
+                          padding: '4px 10px',
+                          borderRadius: 6,
+                          fontWeight: 700,
+                          fontSize: 12
+                        }}>
+                          {report.scheme}
                         </span>
-
-                        {report.scheme && (
-                          <span style={{
-                            background: 'rgba(99, 102, 241, 0.15)',
-                            color: '#a5b4fc',
-                            border: '1px solid rgba(99, 102, 241, 0.3)',
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            fontWeight: 600,
-                            fontSize: 12
-                          }}>
-                            📋 Scheme: {report.scheme}
-                          </span>
-                        )}
-
-                        <span className="badge badge-success" style={{ fontSize: 10, padding: '1px 6px', opacity: 0.9 }}>
-                          ✓ Directly Logged
-                        </span>
-                      </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>—</span>
+                      )}
                     </td>
 
-                    {/* 4th Column: Added Note (Read more / Text wrap) */}
+                    {/* 4th Column: Meeting Purpose */}
+                    <td>
+                      <span className="badge badge-info" style={{ fontSize: 11, fontWeight: 700 }}>
+                        {report.meeting_type || 'General Visit'}
+                      </span>
+                    </td>
+
+                    {/* 5th Column: Added Note (Read more / Text wrap) */}
                     <td>
                       <div style={{
                         background: '#f8fafc',

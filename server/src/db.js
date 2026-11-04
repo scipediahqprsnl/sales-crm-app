@@ -173,6 +173,11 @@ const initDB = async () => {
       await run(`ALTER TABLE work_reports ADD COLUMN IF NOT EXISTS scheme TEXT`);
     } catch (err) {}
 
+    // Ensure is_active column exists on users table for safe deactivation without data loss
+    try {
+      await run(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
+    } catch (err) {}
+
   } else {
     // Local SQLite schema fallback
     await run(`
@@ -264,6 +269,10 @@ const initDB = async () => {
 
     try {
       await run(`ALTER TABLE work_reports ADD COLUMN scheme TEXT`);
+    } catch (err) {}
+
+    try {
+      await run(`ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1`);
     } catch (err) {}
   }
 

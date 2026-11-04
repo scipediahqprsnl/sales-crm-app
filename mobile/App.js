@@ -32,8 +32,6 @@ import {
   setAuthToken, 
   removeAuthToken, 
   removeCurrentUser,
-  API_BASE,
-  setServerUrl,
   queueOfflinePing,
   flushOfflinePings
 } from './src/api';
@@ -63,8 +61,6 @@ export default function App() {
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState('FIELD_REPRESENTATIVE'); // 'BUSINESS_MANAGER' or 'FIELD_REPRESENTATIVE'
-  const [serverHost, setServerHost] = useState(API_BASE);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Attendance & Shift State
   const [attendance, setAttendance] = useState(null);
@@ -650,42 +646,8 @@ export default function App() {
                 </TouchableOpacity>
               </View>
             )}
-
-            <TouchableOpacity 
-              onPress={() => setShowSettingsModal(true)}
-              style={{ marginTop: 18, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#07b0e3', fontSize: 13, fontWeight: '700' }}>⚙️ Configure Server IP</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
-
-        {/* Server IP Settings Modal */}
-        <Modal visible={showSettingsModal} transparent animationType="slide">
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Backend Server URL</Text>
-              <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 10 }}>
-                Cloud Server URL (e.g. https://sales-crm-app-1kqz.onrender.com/api)
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={serverHost}
-                onChangeText={setServerHost}
-              />
-              <TouchableOpacity
-                style={[styles.btnPrimary, { marginTop: 14 }]}
-                onPress={async () => {
-                  await setServerUrl(serverHost);
-                  setShowSettingsModal(false);
-                  Alert.alert('Saved', 'Server endpoint updated');
-                }}
-              >
-                <Text style={styles.btnPrimaryText}>Save & Apply</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </SafeAreaView>
     );
   }
@@ -712,12 +674,6 @@ export default function App() {
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <TouchableOpacity 
-            onPress={() => setShowSettingsModal(true)} 
-            style={{ padding: 6, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8 }}
-          >
-            <Text style={{ fontSize: 14 }}>⚙️</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
             <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '700' }}>Logout</Text>
           </TouchableOpacity>
@@ -823,9 +779,22 @@ export default function App() {
 
                 <TouchableOpacity
                   style={styles.fieldActionBtn}
-                  onPress={() => {
-                    fetchLocation();
-                    Alert.alert('GPS Ping Sent', `Pinged coordinates: ${locationAddress}`);
+                  onPress={async () => {
+                    await fetchLocation();
+                    if (currentCoords && attendance) {
+                      try {
+                        await api.sendPing({
+                          latitude: currentCoords.latitude,
+                          longitude: currentCoords.longitude,
+                          accuracy: currentCoords.accuracy || 10,
+                          speed: currentCoords.speed || 0,
+                          attendanceId: attendance.id,
+                          address: locationAddress,
+                          recorded_at: new Date().toISOString()
+                        });
+                      } catch (err) {}
+                    }
+                    Alert.alert('GPS Check-in Sent', `Live location ping recorded:\n${locationAddress}`);
                   }}
                 >
                   <Text style={styles.fieldActionBtnText}>📡 Check-in / Send Location Ping</Text>
@@ -920,125 +889,110 @@ export default function App() {
       </ScrollView>
 
       {/* Modal: Add Work Report */}
-      <Modal visible={showReportModal} transparent animationType="slide">
+      <Modal visible={showReportModal} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
-          <ScrollView contentContainerStyle={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Work / Client Visit</Text>
-            <Text style={{ color: '#64748b', fontSize: 12, marginBottom: 12 }}>
-              Directly logged to Admin Command Center (No approval required)
-            </Text>
+          <View style={styles.modalCard}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 22 }}>
+              <Text style={styles.modalTitle}>Add Work / Client Visit</Text>
+              <Text style={{ color: '#64748b', fontSize: 12, marginBottom: 14 }}>
+                Enter meeting discussion and selected scheme
+              </Text>
 
-            <Text style={styles.inputLabel}>Client / Company Name *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Apollo Healthcare Ltd"
-              placeholderTextColor="#94a3b8"
-              value={reportForm.client_name}
-              onChangeText={(val) => setReportForm({ ...reportForm, client_name: val })}
-            />
-              {/* the react native app is not working but this peo */}
-            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Meeting Purpose</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Product Demo / Deal Closing"
-              placeholderTextColor="#94a3b8"
-              value={reportForm.meeting_type}
-              onChangeText={(val) => setReportForm({ ...reportForm, meeting_type: val })}
-            />
+              <Text style={styles.inputLabel}>Client / Company Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Apollo Healthcare Ltd"
+                placeholderTextColor="#94a3b8"
+                value={reportForm.client_name}
+                onChangeText={(val) => setReportForm({ ...reportForm, client_name: val })}
+              />
 
-            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Select Scheme *</Text>
-            <TouchableOpacity
-              style={styles.dropdownTrigger}
-              onPress={() => setShowSchemeDropdown(!showSchemeDropdown)}
-            >
-              <Text style={styles.dropdownValueText}>{reportForm.scheme || 'Select Scheme'}</Text>
-              <Text style={{ color: '#64748b', fontSize: 13 }}>{showSchemeDropdown ? '▲' : '▼'}</Text>
-            </TouchableOpacity>
-            {showSchemeDropdown && (
-              <View style={styles.dropdownMenu}>
-                {SCHEME_OPTIONS.map((item) => {
-                  const isSelected = reportForm.scheme === item;
-                  return (
-                    <TouchableOpacity
-                      key={item}
-                      style={[styles.dropdownMenuItem, isSelected && styles.dropdownMenuItemActive]}
-                      onPress={() => {
-                        setReportForm({ ...reportForm, scheme: item });
-                        setShowSchemeDropdown(false);
-                      }}
-                    >
-                      <Text style={[styles.dropdownMenuText, isSelected && styles.dropdownMenuTextActive]}>
-                        {isSelected ? `✓  ${item}` : item}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+              <Text style={[styles.inputLabel, { marginTop: 10 }]}>Meeting Purpose</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Product Demo / Deal Closing"
+                placeholderTextColor="#94a3b8"
+                value={reportForm.meeting_type}
+                onChangeText={(val) => setReportForm({ ...reportForm, meeting_type: val })}
+              />
+
+              <Text style={[styles.inputLabel, { marginTop: 10 }]}>Select Scheme *</Text>
+              <TouchableOpacity
+                style={styles.dropdownTrigger}
+                onPress={() => setShowSchemeDropdown(!showSchemeDropdown)}
+              >
+                <Text style={styles.dropdownValueText}>{reportForm.scheme || 'Select Scheme'}</Text>
+                <Text style={{ color: '#64748b', fontSize: 13 }}>{showSchemeDropdown ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+              {showSchemeDropdown && (
+                <View style={styles.dropdownMenu}>
+                  {SCHEME_OPTIONS.map((item) => {
+                    const isSelected = reportForm.scheme === item;
+                    return (
+                      <TouchableOpacity
+                        key={item}
+                        style={[styles.dropdownMenuItem, isSelected && styles.dropdownMenuItemActive]}
+                        onPress={() => {
+                          setReportForm({ ...reportForm, scheme: item });
+                          setShowSchemeDropdown(false);
+                        }}
+                      >
+                        <Text style={[styles.dropdownMenuText, isSelected && styles.dropdownMenuTextActive]}>
+                          {isSelected ? `✓  ${item}` : item}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              <Text style={[styles.inputLabel, { marginTop: 10 }]}>Discussion Notes *</Text>
+              <TextInput
+                style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+                multiline
+                placeholder="Summary of discussion with client..."
+                placeholderTextColor="#94a3b8"
+                value={reportForm.notes}
+                onChangeText={(val) => setReportForm({ ...reportForm, notes: val })}
+              />
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 20 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1.6,
+                    backgroundColor: '#07b0e3',
+                    borderRadius: 10,
+                    paddingVertical: 13,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  disabled={loading}
+                  onPress={handleSubmitReport}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700' }}>Submit Report</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: 10,
+                    paddingVertical: 13,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: '#e2e8f0',
+                  }}
+                  onPress={() => setShowReportModal(false)}
+                >
+                  <Text style={{ color: '#475569', fontSize: 14, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
               </View>
-            )}
-
-            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Discussion Notes *</Text>
-            <TextInput
-              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
-              multiline
-              placeholder="Summary of discussion with client..."
-              placeholderTextColor="#94a3b8"
-              value={reportForm.notes}
-              onChangeText={(val) => setReportForm({ ...reportForm, notes: val })}
-            />
-
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-              <TouchableOpacity
-                style={[styles.btnPrimary, { flex: 1 }]}
-                disabled={loading}
-                onPress={handleSubmitReport}
-              >
-                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.btnPrimaryText}>Submit Report</Text>}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.btnDemo, { paddingHorizontal: 16 }]}
-                onPress={() => setShowReportModal(false)}
-              >
-                <Text style={styles.btnDemoText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* Server IP Settings Modal (Accessible while logged in) */}
-      <Modal visible={showSettingsModal} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Backend Server URL</Text>
-            <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 10 }}>
-              Enter your live tunnel URL (e.g. https://xxx.loca.lt/api) or local IP.
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={serverHost}
-              onChangeText={setServerHost}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-              <TouchableOpacity
-                style={[styles.btnPrimary, { flex: 1 }]}
-                onPress={async () => {
-                  await setServerUrl(serverHost);
-                  setShowSettingsModal(false);
-                  Alert.alert('Saved', 'Server endpoint updated');
-                }}
-              >
-                <Text style={styles.btnPrimaryText}>Save & Apply</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.btnDemo, { paddingHorizontal: 16 }]}
-                onPress={() => setShowSettingsModal(false)}
-              >
-                <Text style={styles.btnDemoText}>Close</Text>
-              </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1506,7 +1460,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    maxHeight: '88%',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 10,
   },
   modalContent: {
     backgroundColor: '#ffffff',
