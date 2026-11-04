@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, MapPin, Calendar, Clock, User, ShieldCheck } from 'lucide-react';
+import { SERVER_BASE } from '../api';
 
 export default function PhotoModal({ data, onClose }) {
   useEffect(() => {
@@ -12,7 +13,7 @@ export default function PhotoModal({ data, onClose }) {
 
   if (!data) return null;
 
-  const serverUrl = 'http://localhost:5000';
+  const serverUrl = SERVER_BASE;
   const getFullUrl = (url) => {
     if (!url) return null;
     return url.startsWith('http') ? url : `${serverUrl}${url}`;

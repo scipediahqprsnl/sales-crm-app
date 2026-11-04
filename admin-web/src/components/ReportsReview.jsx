@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   X
 } from 'lucide-react';
-import { api } from '../api';
+import { api, SERVER_BASE } from '../api';
 
 const SCHEME_OPTIONS = [
   'ALL',
@@ -74,7 +74,7 @@ export default function ReportsReview() {
     }
   };
 
-  const serverUrl = 'http://localhost:5000';
+  const serverUrl = SERVER_BASE;
   const getFullUrl = (url) => url ? (url.startsWith('http') ? url : `${serverUrl}${url}`) : null;
 
   const filtered = reports.filter((r) => {

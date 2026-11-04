@@ -26,6 +26,17 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/reports', reportsRoutes);
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ONLINE',
+    app: 'Sales-CRM Backend API',
+    message: 'Backend server is running successfully 🚀',
+    healthCheck: '/api/health',
+    time: new Date().toISOString()
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({

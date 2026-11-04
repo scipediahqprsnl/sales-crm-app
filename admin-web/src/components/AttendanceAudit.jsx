@@ -10,7 +10,7 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
-import { api } from '../api';
+import { api, SERVER_BASE } from '../api';
 
 export default function AttendanceAudit({ onViewPhotos }) {
   const [attendances, setAttendances] = useState([]);
@@ -43,7 +43,7 @@ export default function AttendanceAudit({ onViewPhotos }) {
     return matchesRole && matchesSearch;
   });
 
-  const serverUrl = 'http://localhost:5000';
+  const serverUrl = SERVER_BASE;
   const getFullUrl = (url) => url ? (url.startsWith('http') ? url : `${serverUrl}${url}`) : null;
 
   return (

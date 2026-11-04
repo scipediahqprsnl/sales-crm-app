@@ -1,4 +1,5 @@
-const API_BASE = 'http://localhost:5000/api';
+export const SERVER_BASE = import.meta.env.VITE_SERVER_BASE || 'https://sales-crm-app-1kqz.onrender.com';
+export const API_BASE = import.meta.env.VITE_API_BASE || `${SERVER_BASE}/api`;
 
 export const getAuthToken = () => localStorage.getItem('sales_crm_token');
 export const setAuthToken = (token) => localStorage.setItem('sales_crm_token', token);
