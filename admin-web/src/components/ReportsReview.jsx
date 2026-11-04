@@ -260,16 +260,16 @@ export default function ReportsReview() {
 
                     {/* 2nd Column: Name of Organization */}
                     <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#f3f4f6', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Building size={16} color="#38bdf8" />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        <div style={{ fontWeight: 800, fontSize: 15, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <Building size={16} color="#0284c7" />
                           <span>{report.client_name}</span>
                         </div>
 
                         {report.client_address ? (
-                          <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'flex-start', gap: 4, marginTop: 2 }}>
-                            <MapPin size={12} color="#9ca3af" style={{ marginTop: 2, flexShrink: 0 }} />
-                            <span style={{ wordBreak: 'break-word' }}>{report.client_address}</span>
+                          <div style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 3 }}>
+                            <MapPin size={13} color="#64748b" style={{ marginTop: 2, flexShrink: 0 }} />
+                            <span style={{ wordBreak: 'break-word', lineHeight: 1.45 }}>{report.client_address}</span>
                           </div>
                         ) : null}
                       </div>
