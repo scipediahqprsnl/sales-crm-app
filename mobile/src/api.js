@@ -1,18 +1,21 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Local PC Wi-Fi IP for native Android/iOS phone; localhost for web preview
-const detectedHost = '192.168.1.10';
-const DEFAULT_HOST = Platform.OS === 'web' ? 'localhost' : detectedHost;
-export let API_BASE = `http://${DEFAULT_HOST}:5000/api`;
+// Cloud Production Server URL on Render (accessible anywhere via 4G/5G mobile data or Wi-Fi)
+export const CLOUD_SERVER_URL = 'https://sales-crm-app-1kqz.onrender.com';
+export const CLOUD_API_BASE = `${CLOUD_SERVER_URL}/api`;
 
-// Check if custom server host was saved in storage
+export let API_BASE = CLOUD_API_BASE;
+
+// Check if custom server host was saved in storage, upgrade old localhost/LAN to cloud
 AsyncStorage.getItem('sales_crm_server_url')
   .then((saved) => {
-    if (saved && !saved.includes('10.0.2.2')) {
+    if (saved && saved.startsWith('http') && !saved.includes('localhost') && !saved.includes('192.168.') && !saved.includes('10.0.2.2')) {
       API_BASE = saved;
-    } else if (saved && saved.includes('10.0.2.2')) {
-      AsyncStorage.setItem('sales_crm_server_url', `http://${DEFAULT_HOST}:5000/api`);
+    } else {
+      // Default to production cloud Render server
+      API_BASE = CLOUD_API_BASE;
+      AsyncStorage.setItem('sales_crm_server_url', CLOUD_API_BASE);
     }
   })
   .catch(() => {});

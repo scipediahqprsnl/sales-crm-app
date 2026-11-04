@@ -666,7 +666,7 @@ export default function App() {
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Backend Server URL</Text>
               <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 10 }}>
-                If running on physical phone, enter your PC's Wi-Fi IP (e.g. http://192.168.1.12:5000/api)
+                Cloud Server URL (e.g. https://sales-crm-app-1kqz.onrender.com/api)
               </Text>
               <TextInput
                 style={styles.input}
