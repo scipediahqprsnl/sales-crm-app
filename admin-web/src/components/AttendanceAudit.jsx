@@ -44,7 +44,11 @@ export default function AttendanceAudit({ onViewPhotos }) {
   });
 
   const serverUrl = SERVER_BASE;
-  const getFullUrl = (url) => url ? (url.startsWith('http') ? url : `${serverUrl}${url}`) : null;
+  const getFullUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('data:image') || url.startsWith('http')) return url;
+    return `${serverUrl}${url}`;
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

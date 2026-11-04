@@ -41,10 +41,11 @@ router.post('/punch-in', authenticateToken, upload.single('photo'), async (req, 
     const { latitude, longitude, address, photoBase64 } = req.body;
     let photoUrl = null;
 
-    if (req.file) {
+    if (photoBase64) {
+      // Store Base64 directly in cloud database so Render ephemeral disk never loses the photo
+      photoUrl = photoBase64.startsWith('data:') ? photoBase64 : `data:image/jpeg;base64,${photoBase64}`;
+    } else if (req.file) {
       photoUrl = `/uploads/${req.file.filename}`;
-    } else if (photoBase64) {
-      photoUrl = saveBase64Image(photoBase64, 'punch-in');
     }
 
     if (!photoUrl) {
@@ -107,10 +108,11 @@ router.post('/punch-out', authenticateToken, upload.single('photo'), async (req,
     const { latitude, longitude, address, photoBase64 } = req.body;
     let photoUrl = null;
 
-    if (req.file) {
+    if (photoBase64) {
+      // Store Base64 directly in cloud database so Render ephemeral disk never loses the photo
+      photoUrl = photoBase64.startsWith('data:') ? photoBase64 : `data:image/jpeg;base64,${photoBase64}`;
+    } else if (req.file) {
       photoUrl = `/uploads/${req.file.filename}`;
-    } else if (photoBase64) {
-      photoUrl = saveBase64Image(photoBase64, 'punch-out');
     }
 
     if (!photoUrl) {

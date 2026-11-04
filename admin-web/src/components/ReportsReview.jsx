@@ -75,7 +75,11 @@ export default function ReportsReview() {
   };
 
   const serverUrl = SERVER_BASE;
-  const getFullUrl = (url) => url ? (url.startsWith('http') ? url : `${serverUrl}${url}`) : null;
+  const getFullUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('data:image') || url.startsWith('http')) return url;
+    return `${serverUrl}${url}`;
+  };
 
   const filtered = reports.filter((r) => {
     const term = searchTerm.toLowerCase().trim();

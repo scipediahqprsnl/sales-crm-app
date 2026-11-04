@@ -16,7 +16,8 @@ export default function PhotoModal({ data, onClose }) {
   const serverUrl = SERVER_BASE;
   const getFullUrl = (url) => {
     if (!url) return null;
-    return url.startsWith('http') ? url : `${serverUrl}${url}`;
+    if (url.startsWith('data:image') || url.startsWith('http')) return url;
+    return `${serverUrl}${url}`;
   };
 
   const inPhoto = getFullUrl(data.punch_in_photo);
