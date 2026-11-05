@@ -1064,43 +1064,6 @@ export default function App() {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Quick Monthly Attendance Glance */}
-            <View style={styles.card}>
-              <View style={styles.rowBetween}>
-                <View>
-                  <Text style={styles.cardTitle}>Monthly Attendance Glance</Text>
-                  <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                    {MONTH_NAMES[selectedMonth.month]} {selectedMonth.year}
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  onPress={() => setActiveTab('calendar')}
-                  style={{ backgroundColor: '#e0f2fe', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}
-                >
-                  <Text style={{ color: '#0284c7', fontSize: 12, fontWeight: '700' }}>Open Calendar 📅</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.calMiniStatsRow}>
-                <View style={styles.miniStatBox}>
-                  <Text style={[styles.miniStatVal, { color: '#10b981' }]}>{calCompleteCount}</Text>
-                  <Text style={styles.miniStatLbl}>🟢 Complete</Text>
-                </View>
-                <View style={styles.miniStatBox}>
-                  <Text style={[styles.miniStatVal, { color: '#0284c7' }]}>{calActiveCount}</Text>
-                  <Text style={styles.miniStatLbl}>🔵 Active</Text>
-                </View>
-                <View style={styles.miniStatBox}>
-                  <Text style={[styles.miniStatVal, { color: '#ef4444' }]}>{calLeaveCount}</Text>
-                  <Text style={styles.miniStatLbl}>🔴 Missed</Text>
-                </View>
-                <View style={styles.miniStatBox}>
-                  <Text style={[styles.miniStatVal, { color: '#0f172a' }]}>{calTotalHours.toFixed(1)}h</Text>
-                  <Text style={styles.miniStatLbl}>⏱️ Hours</Text>
-                </View>
-              </View>
-            </View>
           </View>
         )}
 
