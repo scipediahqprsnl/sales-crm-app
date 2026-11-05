@@ -522,6 +522,7 @@ export default function App() {
         {activeTab === 'attendance' && (
           <AttendanceAudit 
             onViewPhotos={(data) => setModalPhotoData(data)} 
+            currentUser={currentUser}
           />
         )}
 

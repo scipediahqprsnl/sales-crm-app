@@ -68,15 +68,32 @@ router.post('/', authenticateToken, upload.single('photo'), async (req, res) => 
   }
 });
 
-// Get user's own reports
+// Get reports feed: For Manager, returns own reports + all Field Representatives' reports; for Reps, returns own reports
 router.get('/my-reports', authenticateToken, async (req, res) => {
   try {
-    const reports = await query(
-      `SELECT * FROM work_reports WHERE user_id = ? ORDER BY submitted_at DESC`,
-      [req.user.id]
-    );
+    let reports;
+    if (req.user.role === 'BUSINESS_MANAGER') {
+      reports = await query(
+        `SELECT r.*, u.name as user_name, u.role as user_role
+         FROM work_reports r
+         JOIN users u ON r.user_id = u.id
+         WHERE u.role = 'FIELD_REPRESENTATIVE' OR u.id = ? OR u.manager_id = ?
+         ORDER BY r.submitted_at DESC`,
+        [req.user.id, req.user.id]
+      );
+    } else {
+      reports = await query(
+        `SELECT r.*, u.name as user_name, u.role as user_role
+         FROM work_reports r
+         JOIN users u ON r.user_id = u.id
+         WHERE r.user_id = ?
+         ORDER BY r.submitted_at DESC`,
+        [req.user.id]
+      );
+    }
     res.json({ reports });
   } catch (error) {
+    console.error('Failed to fetch reports:', error);
     res.status(500).json({ error: 'Failed to fetch your reports' });
   }
 });
@@ -103,7 +120,7 @@ router.get('/all', authenticateToken, requireRole(['ADMIN', 'BUSINESS_MANAGER'])
         FROM work_reports r
         JOIN users u ON r.user_id = u.id
         LEFT JOIN users reviewer ON r.reviewed_by = reviewer.id
-        WHERE u.manager_id = ? OR u.id = ?
+        WHERE u.role = 'FIELD_REPRESENTATIVE' OR u.manager_id = ? OR u.id = ?
         ORDER BY r.submitted_at DESC
       `;
       params = [req.user.id, req.user.id];

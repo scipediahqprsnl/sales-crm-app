@@ -1,8 +1,16 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Fixed Production Cloud Server URL on Render
-export const CLOUD_SERVER_URL = 'https://sales-crm-app-1kqz.onrender.com';
+// Server URL Toggle:
+// Local test karne ke liye 'USE_LOCAL_SERVER = true' karein.
+// Production Render cloud test karne ke liye 'USE_LOCAL_SERVER = false' rakhein.
+export const USE_LOCAL_SERVER = false;
+export const LOCAL_IP = '192.168.1.10'; // Aapke PC ka Wi-Fi IP
+
+export const CLOUD_SERVER_URL = USE_LOCAL_SERVER
+  ? (Platform.OS === 'web' ? 'http://localhost:5000' : `http://${LOCAL_IP}:5000`)
+  : 'https://sales-crm-app-1kqz.onrender.com';
+
 export const API_BASE = `${CLOUD_SERVER_URL}/api`;
 
 export const getAuthToken = async () => {
@@ -78,6 +86,7 @@ export const api = {
     body: JSON.stringify(payload),
   }),
   getMyHistory: () => request('/attendance/history'),
+  getMonthlyAttendance: (month) => request(`/attendance/monthly${month ? `?month=${month}` : ''}`),
 
   // Live Tracking
   sendPing: (pingData) => request('/tracking/ping', {

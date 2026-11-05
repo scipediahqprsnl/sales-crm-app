@@ -60,6 +60,13 @@ export const api = {
   // Attendance
   getTodayAttendance: () => request('/attendance/today'),
   getAllAttendances: (date) => request(`/attendance/all${date ? `?date=${date}` : ''}`),
+  getMonthlyAttendance: (month, userId) => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    if (userId) params.append('userId', userId);
+    const qs = params.toString();
+    return request(`/attendance/monthly${qs ? `?${qs}` : ''}`);
+  },
 
   // Tracking & Timeline
   getLiveFleet: () => request('/tracking/live'),

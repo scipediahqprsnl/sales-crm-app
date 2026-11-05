@@ -41,6 +41,10 @@ router.post('/punch-in', authenticateToken, upload.single('photo'), async (req, 
     const { latitude, longitude, address, photoBase64 } = req.body;
     let photoUrl = null;
 
+    const cleanAddress = (!address || address.includes('Fetching'))
+      ? (latitude && longitude ? `GPS (${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)})` : 'Recorded via GPS')
+      : address;
+
     if (photoBase64) {
       // Store Base64 directly in cloud database so Render ephemeral disk never loses the photo
       photoUrl = photoBase64.startsWith('data:') ? photoBase64 : `data:image/jpeg;base64,${photoBase64}`;
@@ -66,7 +70,7 @@ router.post('/punch-in', authenticateToken, upload.single('photo'), async (req, 
         now,
         latitude ? parseFloat(latitude) : null,
         longitude ? parseFloat(longitude) : null,
-        address || 'Recorded via GPS',
+        cleanAddress,
         photoUrl,
         'PRESENT'
       ]
@@ -108,6 +112,10 @@ router.post('/punch-out', authenticateToken, upload.single('photo'), async (req,
     const { latitude, longitude, address, photoBase64 } = req.body;
     let photoUrl = null;
 
+    const cleanAddress = (!address || address.includes('Fetching'))
+      ? (latitude && longitude ? `GPS (${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)})` : 'Recorded via GPS')
+      : address;
+
     if (photoBase64) {
       // Store Base64 directly in cloud database so Render ephemeral disk never loses the photo
       photoUrl = photoBase64.startsWith('data:') ? photoBase64 : `data:image/jpeg;base64,${photoBase64}`;
@@ -137,7 +145,7 @@ router.post('/punch-out', authenticateToken, upload.single('photo'), async (req,
         now.toISOString(),
         latitude ? parseFloat(latitude) : null,
         longitude ? parseFloat(longitude) : null,
-        address || 'Recorded via GPS',
+        cleanAddress,
         photoUrl,
         totalHours,
         attendance.id
@@ -183,7 +191,52 @@ router.get('/history', authenticateToken, async (req, res) => {
   }
 });
 
-// Admin / Manager view: All employee attendances with photos
+// Monthly attendance records & statistics for calendar
+router.get('/monthly', authenticateToken, async (req, res) => {
+  try {
+    const month = req.query.month || new Date().toISOString().substring(0, 7); // 'YYYY-MM'
+    let targetUserId = req.user.id;
+
+    // Only ADMIN can inspect other users' monthly attendance.
+    // Managers & Field Reps can strictly see ONLY their own attendance.
+    if (req.query.userId && req.user.role === 'ADMIN') {
+      targetUserId = req.query.userId;
+    }
+
+    const records = await query(
+      `SELECT 
+        id, 
+        user_id, 
+        date, 
+        punch_in_time, 
+        punch_in_address, 
+        punch_out_time, 
+        punch_out_address, 
+        total_hours, 
+        status
+      FROM attendances 
+      WHERE user_id = ? AND date LIKE ? 
+      ORDER BY date ASC`,
+      [targetUserId, `${month}%`]
+    );
+
+    const targetUser = await get(
+      `SELECT id, name, email, role FROM users WHERE id = ?`,
+      [targetUserId]
+    );
+
+    res.json({
+      month,
+      user: targetUser,
+      attendances: records
+    });
+  } catch (error) {
+    console.error('Fetch monthly attendance error:', error);
+    res.status(500).json({ error: 'Failed to fetch monthly attendance records' });
+  }
+});
+
+// Attendance view: All employee attendances for Admin; strictly own attendance for Business Manager
 router.get('/all', authenticateToken, requireRole(['ADMIN', 'BUSINESS_MANAGER']), async (req, res) => {
   try {
     const date = req.query.date || new Date().toISOString().split('T')[0];
@@ -200,22 +253,22 @@ router.get('/all', authenticateToken, requireRole(['ADMIN', 'BUSINESS_MANAGER'])
       `;
       params = [date];
     } else {
-      // Business Manager view
+      // Business Manager view: strictly restricted to their own attendance only
       sql = `
         SELECT a.*, u.name as user_name, u.email as user_email, u.role as user_role, u.phone as user_phone
         FROM attendances a
         JOIN users u ON a.user_id = u.id
-        WHERE a.date = ? AND (u.manager_id = ? OR u.id = ?)
+        WHERE a.date = ? AND u.id = ?
         ORDER BY a.punch_in_time DESC
       `;
-      params = [date, req.user.id, req.user.id];
+      params = [date, req.user.id];
     }
 
     const attendances = await query(sql, params);
     res.json({ date, attendances });
   } catch (error) {
     console.error('Fetch all attendances error:', error);
-    res.status(500).json({ error: 'Error fetching team attendance records' });
+    res.status(500).json({ error: 'Error fetching attendance records' });
   }
 });
 

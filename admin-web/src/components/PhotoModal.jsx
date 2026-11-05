@@ -96,7 +96,7 @@ export default function PhotoModal({ data, onClose }) {
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                 <MapPin size={14} color="#6366f1" style={{ flexShrink: 0, marginTop: 2 }} />
-                <span>{data.punch_in_address || 'Address logged via GPS'}</span>
+                <span>{(!data.punch_in_address || data.punch_in_address.includes('Fetching')) ? 'Address logged via GPS' : data.punch_in_address}</span>
               </div>
               {data.punch_in_lat && (
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 20 }}>
@@ -146,7 +146,7 @@ export default function PhotoModal({ data, onClose }) {
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                 <MapPin size={14} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }} />
-                <span>{data.punch_out_address || (data.punch_out_time ? 'Address logged via GPS' : 'Shift ongoing')}</span>
+                <span>{(!data.punch_out_address || data.punch_out_address.includes('Fetching')) ? (data.punch_out_time ? 'Address logged via GPS' : 'Shift ongoing') : data.punch_out_address}</span>
               </div>
               {data.total_hours !== undefined && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontWeight: 600, color: '#10b981' }}>
